@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.postgres_operator
 from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
                                 LoadDimensionOperator, DataQualityOperator)
 from helpers import SqlQueries
@@ -10,7 +11,7 @@ AWS_KEY = os.environ.get('AWS_KEY')
 AWS_SECRET = os.environ.get('AWS_SECRET')
 
 default_args = {
-    'owner': 'udacity',
+    'owner': 'Idelfonso',
     'depends_on_past': False,
     'email': ['idelfonsogg2@gmail.com'],
     'email_on_failure': True,
@@ -27,14 +28,29 @@ dag = DAG('udac_example_dag',
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
+# Where do we run Create tables
+
+create_tables = Postgress
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    aws_credentials_id="aws_credentials",
+    s3_bucket="data-pipelines-idelfonso",
+    s3_key="log_data/{execution_date.year}/{execution_date.month}/{{{{execution_date.year}}}-{{{execution_date.month}}}}-events.json",
+    target_table="stage_events",
+    json_file_path="s3://data-pipelines-idelfonso/log_json_path.json"
 )
 
 stage_songs_to_redshift = StageToRedshiftOperator(
     task_id='Stage_songs',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    aws_credentials_id="aws_credentials",
+    s3_bucket="data-pipelines-idelfonso",
+    s3_key="song_data/*/*/*/*.json",
+    target_table="stage_songs",
+    json_file_path=""
 )
 
 load_songplays_table = LoadFactOperator(
