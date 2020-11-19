@@ -7,34 +7,27 @@ from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
                                 LoadDimensionOperator, DataQualityOperator)
 from helpers import SqlQueries
 
-AWS_KEY = os.environ.get('AWS_KEY')
-AWS_SECRET = os.environ.get('AWS_SECRET')
+# AWS_KEY = os.environ.get('AWS_KEY')
+# AWS_SECRET = os.environ.get('AWS_SECRET')
 
 default_args = {
     'owner': 'Idelfonso',
     'depends_on_past': False,
-    'email': ['idelfonsogg2@gmail.com'],
-    'email_on_failure': True,
+    'email': ['idelfonsog2@gmail.com'],
+    'email_on_failure': False,
     'email_on_retry': False,
     'catchup': False,
-    'retries': 3,
-    'retry_delay': timedelta(minutes=5),
-    'start_date': datetime(2018, 11, 1),
+    # 'retries': 3,
+    # 'retry_delay': timedelta(minutes=5),
+    'start_date': datetime(2018, 11, 1)
 }
 
 dag = DAG('sparkify_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='0 * * * *')
+          schedule_interval='@once')
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
-
-create_tables = PostgresOperator(
-    task_id = "Create_table",
-    dag = dag,
-    postgres_conn_id="redshift",
-    sql='create_table.sql'
-)
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
@@ -42,8 +35,8 @@ stage_events_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="data-pipelines-idelfonso",
-    s3_key="log_data/{execution_date.year}/{execution_date.month}/{{{{execution_date.year}}}-{{{execution_date.month}}}}-events.json",
-    target_table="stage_events",
+    s3_key="log_data",
+    target_table="staging_events",
     json_file_path="s3://data-pipelines-idelfonso/log_json_path.json"
 )
 
@@ -53,9 +46,9 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="data-pipelines-idelfonso",
-    s3_key="song_data/*/*/*/*.json",
-    target_table="stage_songs",
-    json_file_path=""
+    s3_key="song_data",
+    target_table="staging_songs",
+    json_file_path="auto"
 )
 
 load_songplays_table = LoadFactOperator(
@@ -90,9 +83,8 @@ run_quality_checks = DataQualityOperator(
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
-start_operator >> create_tables
-create_tables >> stage_events_to_redshift
-create_tables >> stage_songs_to_redshift
+start_operator >> stage_events_to_redshift
+start_operator >> stage_songs_to_redshift
 
 stage_events_to_redshift >> load_songplays_table
 stage_songs_to_redshift >> load_songplays_table
