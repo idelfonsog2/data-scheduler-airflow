@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.postgres_operator
+from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
                                 LoadDimensionOperator, DataQualityOperator)
 from helpers import SqlQueries
@@ -18,19 +18,24 @@ default_args = {
     'email_on_retry': False,
     'catchup': False,
     'retries': 3,
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=5),
+    'start_date': datetime(2018, 11, 1),
 }
 
-dag = DAG('udac_example_dag',
+dag = DAG('sparkify_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
           schedule_interval='0 * * * *')
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
-# Where do we run Create tables
+create_tables = PostgresOperator(
+    task_id = "Create_table",
+    dag = dag,
+    postgres_conn_id="redshift",
+    sql='create_table.sql'
+)
 
-create_tables = Postgress
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
     dag=dag,
@@ -85,8 +90,9 @@ run_quality_checks = DataQualityOperator(
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
-start_operator >> stage_events_to_redshift
-start_operator >> stage_songs_to_redshift
+start_operator >> create_tables
+create_tables >> stage_events_to_redshift
+create_tables >> stage_songs_to_redshift
 
 stage_events_to_redshift >> load_songplays_table
 stage_songs_to_redshift >> load_songplays_table
