@@ -3,7 +3,7 @@
 
 This project showcases how to design and schedule a series of jobs/steps using [Apache Airflow](https://airflow.apache.org/) with the following purposes
 - Backfill data
-- Build a dimmensional data model using python
+- Build a dimensional data model using python
 - load data from AWS S3 bucket to AWS Redshift Datawarehouse
 - run quality checks on the data
 - Use or create custom operators and available hooks to create reusable code

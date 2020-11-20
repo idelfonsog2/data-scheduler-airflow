@@ -26,5 +26,4 @@ class LoadFactOperator(BaseOperator):
         self.log.info(f'Inserting into table {self.target_table} ...')
         redshift.run("INSERT INTO {target_table} {sql_statement}".format(target_table=self.target_table, sql_statement=self.sql_statement))
 
-        redshift.run(self.sql_statement)
         self.log.info(f'End of LoadFactOperator {self.target_table} ...')
