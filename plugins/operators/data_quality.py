@@ -9,19 +9,23 @@ class DataQualityOperator(BaseOperator):
     @apply_defaults
     def __init__(self,
                  redshift_conn_id="",
-                 check=[],
+                 dq_check=[],
                  *args, **kwargs):
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id= redshift_conn_id
-        self.check = check
+        self.dq_check = dq_check
 
     def execute(self, context):
-        self.log.info('DataQualityOperator')
+        self.log.info('DataQualityOperator Started')
 
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
-        records = redshift.get_records(check['check_sql'])[0]
+
+        for check in self.dq_check:
+            records = redshift.get_records(check['check_sql'])[0]
          
-        if records[0] != check['expected_result']:
-            ValueError(f"Data quality check failed. {check['table']} contains null in id column, got {records[0]} instead")
+            if records[0] != check['expected_result']:
+                ValueError(f"Data quality check failed. {check['check_sql']} contains null in id column, got {records[0]} instead")
+        
+        self.log.info('DataQualityOperator Ended')
    

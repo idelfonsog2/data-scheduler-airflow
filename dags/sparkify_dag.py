@@ -95,10 +95,13 @@ run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag,
     redshift_conn_id="redshift",
-    check=[
-        'check_sql': 'SELECT * FROM t WHERE (t IS NULL);',
-        'expected_result': '0'
-        ]
+    dq_check= [
+        { 'check_sql': 'SELECT COUNT(*) FROM artists WHERE (name IS NULL);', 'expected_result': '0' },
+        { 'check_sql': 'SELECT COUNT(*) FROM users WHERE (level IS NULL);', 'expected_result': '0' },
+        { 'check_sql': 'SELECT COUNT(*) FROM songs WHERE (title IS NULL);', 'expected_result': '0' },
+        { 'check_sql': 'SELECT COUNT(*) FROM time WHERE (weekday IS NULL);', 'expected_result': '0' },
+        { 'check_sql': 'SELECT COUNT(*) FROM songplays WHERE (user_agent IS NULL);', 'expected_result': '0' }
+    ]
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
